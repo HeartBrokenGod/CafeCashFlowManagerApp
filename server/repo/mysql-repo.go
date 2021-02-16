@@ -14,8 +14,10 @@ func GetRepo(db *sql.DB) (repo *Repo, err error) {
 	return &Repo{db}, nil
 }
 
+// Read CashFlows
 func (repo Repo) GetCashFlowInRange(fromDate time.Time, toDate time.Time) ([]model.CashFlow, error) {
 	rows, err := repo.Db.Query(`SELECT date,cash_inflow,e_pay_inflow,cash_expenditure,created_on,updated_on FROM cash_flow WHERE date BETWEEN  ?  AND  ?  `, fromDate, toDate)
+	defer rows.Close()
 
 	if err != nil {
 		return nil, err
@@ -43,8 +45,18 @@ func (repo Repo) GetCashFlowInRange(fromDate time.Time, toDate time.Time) ([]mod
 
 }
 
+// Create CashFlow
 func (repo Repo) CreateCashFlow(cashflow model.CashFlow) (bool, error) {
 	_, err := repo.Db.Exec(`INSERT INTO cash_flow (date, cash_inflow, e_pay_inflow, cash_expenditure) VALUES (?, ?, ?, ?)`, cashflow.Date, cashflow.CashInflow, cashflow.EPayInflow, cashflow.CashExpenditure)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+// Update CashFlow
+func (repo Repo) UpdateCashFlow(cashflow model.CashFlow) (bool, error) {
+	_, err := repo.Db.Exec("UPDATE `cash_flow` SET `cash_inflow` = ?, `e_pay_inflow` = ?, `cash_expenditure` = ? WHERE `cash_flow`.`date` = ?", cashflow.CashInflow, cashflow.EPayInflow, cashflow.CashExpenditure, cashflow.Date)
 	if err != nil {
 		return false, err
 	}
